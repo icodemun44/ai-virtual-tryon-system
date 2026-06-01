@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "AI Outfit Try-On Lens",
+  "version": "1.0.0",
+  "description": "Extracts e-commerce assets and interfaces with the try-on pipeline.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["assets/content.js"]
+    }
+  ]
+}
