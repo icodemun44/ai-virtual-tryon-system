@@ -1,0 +1,1 @@
+# add the scrapping concept here, use playwright to scrape the data from the website and return the data in a structured format
