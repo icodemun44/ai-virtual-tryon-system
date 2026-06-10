@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Try-On | AI Fashion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .upload-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .upload-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .upload-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+        }
+
+        .upload-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-card .icon {
+            font-size: 1.5rem;
+        }
+
+        .drop-zone {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .drop-zone.dragover {
+            border-color: #667eea;
+            background: #e8eeff;
+            transform: scale(1.02);
+        }
+
+        .drop-zone input[type="file"] {
+            display: none;
+        }
+
+        .drop-zone .placeholder {
+            color: #888;
+        }
+
+        .drop-zone .placeholder .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .drop-zone .file-name {
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 10px;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .generate-btn {
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 30px;
+            padding: 18px 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .result-section {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        .result-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .result-image {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+        }
+
+        .error-message {
+            display: none;
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        .api-key-notice {
+            background: #fff3e0;
+            color: #e65100;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .api-key-notice code {
+            background: #ffe0b2;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👗 Virtual Try-On</h1>
+            <p>Upload a photo of yourself and any clothing item to see how it looks on you!</p>
+        </div>
+
+        <div class="api-key-notice">
+            ⚠️ Make sure to set your <code>GEMINI_API_KEY</code> in the backend before using this app.
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="upload-section">
+            <div class="upload-card">
+                <h2><span class="icon">👤</span> Upload the Person Picture Here</h2>
+                <div class="drop-zone" id="personDropZone" onclick="document.getElementById('personInput').click()">
+                    <input type="file" id="personInput" accept="image/*" onchange="handleFileSelect(event, 'person')">
+                    <div class="placeholder" id="personPlaceholder">
+                        <span class="upload-icon">📤</span>
+                        <p>Drag & drop or click to upload</p>
+                        <p style="font-size: 0.85rem; margin-top: 8px;">Supports JPG, PNG, WEBP</p>
+                    </div>
+                    <div class="file-name" id="personFileName"></div>
+                    <img class="preview-image" id="personPreview" style="display: none;">
+                </div>
+            </div>
+
+            <div class="upload-card">
+                <h2><span class="icon">👕</span> Upload the Clothes Picture Here</h2>
+                <div class="drop-zone" id="clothesDropZone" onclick="document.getElementById('clothesInput').click()">
+                    <input type="file" id="clothesInput" accept="image/*" onchange="handleFileSelect(event, 'clothes')">
+                    <div class="placeholder" id="clothesPlaceholder">
+                        <span class="upload-icon">📤</span>
+                        <p>Drag & drop or click to upload</p>
+                        <p style="font-size: 0.85rem; margin-top: 8px;">Supports JPG, PNG, WEBP</p>
+                    </div>
+                    <div class="file-name" id="clothesFileName"></div>
+                    <img class="preview-image" id="clothesPreview" style="display: none;">
+                </div>
+            </div>
+        </div>
+
+        <button class="generate-btn" id="generateBtn" onclick="generateTryOn()" disabled>
+            ✨ Generate Try-On
+        </button>
+
+        <div class="result-section" id="resultSection">
+            <h2>🎉 Your Virtual Try-On Result</h2>
+            <img class="result-image" id="resultImage" alt="Generated Try-On Result">
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p class="loading-text">AI is working its magic... This may take 10-30 seconds</p>
+    </div>
+
+    <script>
+        let personFile = null;
+        let clothesFile = null;
+
+        // Drag and drop support
+        ['person', 'clothes'].forEach(type => {
+            const dropZone = document.getElementById(type + 'DropZone');
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0], type);
+                }
+            });
+        });
+
+        function handleFileSelect(event, type) {
+            const file = event.target.files[0];
+            if (file) handleFile(file, type);
+        }
+
+        function handleFile(file, type) {
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showError('Please upload a valid image file (JPG, PNG, or WEBP)');
+                return;
+            }
+
+            // Validate file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showError('File size must be less than 10MB');
+                return;
+            }
+
+            if (type === 'person') {
+                personFile = file;
+            } else {
+                clothesFile = file;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById(type + 'Preview');
+                const placeholder = document.getElementById(type + 'Placeholder');
+                const fileName = document.getElementById(type + 'FileName');
+
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                fileName.textContent = file.name;
+            };
+            reader.readAsDataURL(file);
+
+            checkFormValidity();
+            hideError();
+        }
+
+        function checkFormValidity() {
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = !(personFile && clothesFile);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('active');
+            setTimeout(hideError, 5000);
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('active');
+        }
+
+        async function generateTryOn() {
+            if (!personFile || !clothesFile) {
+                showError('Please upload both images first!');
+                return;
+            }
+
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const resultSection = document.getElementById('resultSection');
+            const resultImage = document.getElementById('resultImage');
+            const generateBtn = document.getElementById('generateBtn');
+
+            loadingOverlay.classList.add('active');
+            generateBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('person_image', personFile);
+            formData.append('clothes_image', clothesFile);
+
+            try {
+                const response = await fetch('http://localhost:8000/try-on', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Failed to generate try-on image');
+                }
+
+                if (data.success && data.generated_image) {
+                    resultImage.src = data.generated_image;
+                    resultSection.classList.add('active');
+                    resultSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    throw new Error(data.message || 'No image was generated');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+                console.error('Error:', error);
+            } finally {
+                loadingOverlay.classList.remove('active');
+                generateBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
