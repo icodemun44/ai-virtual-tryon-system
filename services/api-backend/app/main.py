@@ -1,5 +1,24 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+# ==========================================
+# Temporary Custom Definitions
+# ==========================================
+
+class ScrapePayload(BaseModel):
+    url: str  # Validates that incoming JSON has a "url" string key
+
+async def extract_product_image(url: str) -> str:
+    """
+    Temporary placeholder for your scraper logic.
+    """
+    return "https://example.com/assets/extracted-product-image.jpg"
+
+
+# ==========================================
+# Core FastAPI Application Setup
+# ==========================================
 
 app = FastAPI(
     title="AI Outfit Try-On API",
@@ -34,10 +53,11 @@ async def process_url_extraction(payload: ScrapePayload):
         
     try:
         scraped_asset_url = await extract_product_image(payload.url)
-        return {"status" : "succcess",
-                "source_marketplace_url": payload.url,
-                "extracted_asset_url": scraped_asset_url
-                }
+        return {
+            "status": "success",
+            "source_marketplace_url": payload.url,
+            "extracted_asset_url": scraped_asset_url
+        }
     except ValueError as value_error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
