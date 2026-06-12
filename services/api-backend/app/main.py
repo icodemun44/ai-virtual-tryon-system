@@ -2,9 +2,7 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# ==========================================
-# Temporary Custom Definitions
-# ==========================================
+
 
 class ScrapePayload(BaseModel):
     url: str  # Validates that incoming JSON has a "url" string key
@@ -16,9 +14,6 @@ async def extract_product_image(url: str) -> str:
     return "https://example.com/assets/extracted-product-image.jpg"
 
 
-# ==========================================
-# Core FastAPI Application Setup
-# ==========================================
 
 app = FastAPI(
     title="AI Outfit Try-On API",
