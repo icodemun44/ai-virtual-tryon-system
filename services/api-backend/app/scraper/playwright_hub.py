@@ -8,51 +8,49 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def fetch_image(url: str) -> str:
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(url, wait_until="networkidle", timeout=30000)
         
-        # 1. Debug: Print how many images we found
-        images = page.query_selector_all("img")
-        print(f"Total images found on page: {len(images)}")
+        browser = p.chromium.launch(headless=False) # Keep False for now to see what's happening
         
-        best_img_src = None
-        max_area = 0
+       
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            viewport={"width": 1280, "height": 720}
+        )
+        page = context.new_page()
         
-        for img in images:
-            # 2. Get the 'src' or 'data-src' (Zara often uses data-src for lazy loading)
-            src = img.get_attribute("src") or img.get_attribute("data-src")
-            if not src or "logo" in src or "icon" in src:
-                continue
-            
-            box = img.bounding_box()
-            if box:
-                area = box['width'] * box['height']
-                if area > max_area:
-                    max_area = area
-                    best_img_src = src
-        
-        # 3. CRITICAL: Stop if no image is found
-        if not best_img_src:
-            print("Error: No valid image found. The page might be blocking the bot.")
-            browser.close()
-            return None
-        
-        print(f"Found best image: {best_img_src}")
-        
-        # Ensure URL is absolute
-        if best_img_src.startswith("//"):
-            best_img_src = "https:" + best_img_src
-            
-        # Download
-        file_path = os.path.join(DOWNLOAD_DIR, f"{uuid.uuid4().hex}.jpg")
         try:
-            response = requests.get(best_img_src, headers={"User-Agent": "Mozilla/5.0"})
-            with open(file_path, "wb") as f:
-                f.write(response.content)
+           
+            page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_timeout(5000) # Wait 5 seconds for JS to render
+            
+            
+            page.mouse.wheel(0, 1500)
+            page.wait_for_timeout(3000)
+            
+            images = page.query_selector_all("img")
+            print(f"Total images found: {len(images)}")
+            
+            
+            best_img_src = None
+            max_area = 0
+            for img in images:
+                src = img.get_attribute("src") or img.get_attribute("data-src")
+                if not src or "logo" in src: continue
+                box = img.bounding_box()
+                if box:
+                    area = box['width'] * box['height']
+                    if area > max_area:
+                        max_area = area
+                        best_img_src = src
+            
+      
+            if best_img_src:
+                if best_img_src.startswith("//"): best_img_src = "https:" + best_img_src
+                file_path = os.path.join(DOWNLOAD_DIR, f"{uuid.uuid4().hex}.jpg")
+                with open(file_path, "wb") as f:
+                    f.write(requests.get(best_img_src, headers={"User-Agent": "Mozilla/5.0"}).content)
+                return file_path
+            else:
+                return None
+        finally:
             browser.close()
-            return file_path
-        except Exception as e:
-            print(f"Download error: {e}")
-            browser.close()
-            return None
