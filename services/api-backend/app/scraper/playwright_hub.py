@@ -19,21 +19,21 @@ def fetch_image(url: str) -> str:
             print(f"Navigating to: {url}")
             page.goto(url, wait_until="domcontentloaded", timeout=60000)
             
-            # --- INTERACTIVE LAYER BYPASS ---
-            # Define common selectors for region/cookie/welcome overlays
+            
+            
             overlay_selectors = [
-                "button[id*='onetrust-accept']", # Cookie banners
-                "button[class*='go-to-site']",    # Zara/Retailer 'Go to site'
-                "a[class*='region']",             # Region selection
-                "button[aria-label='Close']"      # Generic close icons
+                "button[id*='onetrust-accept']", 
+                "button[class*='go-to-site']",    
+                "a[class*='region']",             
+                "button[aria-label='Close']"      
             ]
             
             for selector in overlay_selectors:
                 if page.is_visible(selector):
                     page.click(selector)
                     print(f"Clicked overlay: {selector}")
-                    page.wait_for_timeout(1000) # Give the site time to transition
-            # --------------------------------
+                    page.wait_for_timeout(1000) 
+            
 
             page.wait_for_timeout(5000) 
             page.mouse.wheel(0, 1500)
@@ -58,8 +58,7 @@ def fetch_image(url: str) -> str:
                 if best_img_src.startswith("//"): best_img_src = "https:" + best_img_src
                 file_path = os.path.join(DOWNLOAD_DIR, f"{uuid.uuid4().hex}.jpg")
                 with open(file_path, "wb") as f:
-                    # Note: Using requests here is fine, but if you get 403s, 
-                    # you should use page.request.get() inside the browser context.
+                    
                     f.write(requests.get(best_img_src, headers={"User-Agent": "Mozilla/5.0"}).content)
                 return file_path
             return None
