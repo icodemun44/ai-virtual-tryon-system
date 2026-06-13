@@ -3,7 +3,7 @@ from playwright_hub import fetch_image
 
 def run_test():
     # A test URL for Zara
-    test_url = "https://www.zara.com/us/en/striped-polo-sweater-p05536218.html?v1=514936204"
+    test_url = "https://www.zara.com/us/en/100-linen-polo-shirt-p02634252.html?v1=548796518"
     
     print(f"--- Starting test for: {test_url} ---")
     
