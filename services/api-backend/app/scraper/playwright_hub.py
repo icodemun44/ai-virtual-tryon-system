@@ -8,10 +8,7 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def fetch_image(url: str) -> str:
     with sync_playwright() as p:
-        
-        browser = p.chromium.launch(headless=False) # Keep False for now to see what's happening
-        
-       
+        browser = p.chromium.launch(headless=False)
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
             viewport={"width": 1280, "height": 720}
@@ -19,17 +16,31 @@ def fetch_image(url: str) -> str:
         page = context.new_page()
         
         try:
-           
+            print(f"Navigating to: {url}")
             page.goto(url, wait_until="domcontentloaded", timeout=60000)
-            page.wait_for_timeout(5000) # Wait 5 seconds for JS to render
             
+            # --- INTERACTIVE LAYER BYPASS ---
+            # Define common selectors for region/cookie/welcome overlays
+            overlay_selectors = [
+                "button[id*='onetrust-accept']", # Cookie banners
+                "button[class*='go-to-site']",    # Zara/Retailer 'Go to site'
+                "a[class*='region']",             # Region selection
+                "button[aria-label='Close']"      # Generic close icons
+            ]
             
+            for selector in overlay_selectors:
+                if page.is_visible(selector):
+                    page.click(selector)
+                    print(f"Clicked overlay: {selector}")
+                    page.wait_for_timeout(1000) # Give the site time to transition
+            # --------------------------------
+
+            page.wait_for_timeout(5000) 
             page.mouse.wheel(0, 1500)
             page.wait_for_timeout(3000)
             
             images = page.query_selector_all("img")
             print(f"Total images found: {len(images)}")
-            
             
             best_img_src = None
             max_area = 0
@@ -43,14 +54,14 @@ def fetch_image(url: str) -> str:
                         max_area = area
                         best_img_src = src
             
-      
             if best_img_src:
                 if best_img_src.startswith("//"): best_img_src = "https:" + best_img_src
                 file_path = os.path.join(DOWNLOAD_DIR, f"{uuid.uuid4().hex}.jpg")
                 with open(file_path, "wb") as f:
+                    # Note: Using requests here is fine, but if you get 403s, 
+                    # you should use page.request.get() inside the browser context.
                     f.write(requests.get(best_img_src, headers={"User-Agent": "Mozilla/5.0"}).content)
                 return file_path
-            else:
-                return None
+            return None
         finally:
             browser.close()
