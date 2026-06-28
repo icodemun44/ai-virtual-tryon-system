@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your Generated Image</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-neutral-900 text-white min-h-screen flex items-center justify-center p-6">
+    <div id="container" class="text-center max-w-3xl w-full">
+        <div id="loading" class="flex flex-col items-center gap-4">
+            <div class="w-12 h-12 border-4 border-neutral-700 border-t-blue-500 rounded-full animate-spin"></div>
+            <p class="text-neutral-400">Generating your image...</p>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const imageUrl = params.get('image');
+        const error = params.get('error');
+        const container = document.getElementById('container');
+
+        if (error) {
+            container.innerHTML = `
+          <h1 class="text-2xl font-semibold mb-4">Oops!</h1>
+          <p class="text-red-400 mb-6">${decodeURIComponent(error)}</p>
+          <button onclick="window.close()" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-6 rounded-lg transition-colors">
+            Close
+          </button>
+        `;
+        } else if (imageUrl) {
+            container.innerHTML = `
+          <h1 class="text-2xl font-semibold mb-6">Here's Your Generated Image</h1>
+          <div class="bg-neutral-800 rounded-2xl p-4 border border-neutral-700 mb-6">
+            <img src="${decodeURIComponent(imageUrl)}" alt="Generated result" class="w-full rounded-xl" />
+          </div>
+          <div class="flex gap-3 justify-center">
+            <a href="${decodeURIComponent(imageUrl)}" download class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-6 rounded-lg transition-colors">
+              Download
+            </a>
+            <button onclick="window.close()" class="bg-neutral-700 hover:bg-neutral-600 text-white font-medium py-2.5 px-6 rounded-lg transition-colors">
+              Close
+            </button>
+          </div>
+        `;
+        } else {
+            container.innerHTML = `
+          <h1 class="text-2xl font-semibold mb-4">No Image Found</h1>
+          <p class="text-red-400 mb-6">Something went wrong. Please try again.</p>
+          <button onclick="window.close()" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-6 rounded-lg transition-colors">
+            Close
+          </button>
+        `;
+        }
+    </script>
+</body>
+
+</html>
